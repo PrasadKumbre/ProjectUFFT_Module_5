@@ -1,0 +1,68 @@
+ body {
+     background-color: #f8f8ed;
+     /* Beige */
+     color: #2a4d69;
+     /* Dark blue */
+ }
+
+ h1,
+ h2 {
+     color: #2a4d69;
+     /* Dark blue */
+ }
+
+ table {
+     background-color: #ffffff;
+     border-radius: 10px;
+     /* Rounded corners */
+     border: 2px solid black;
+     /* Black border */
+     overflow: hidden;
+ }
+
+ table thead {
+     background-color: #2a4d69;
+     /* Dark blue */
+     color: #ffffff;
+     /* Beige */
+ }
+
+ table tbody tr:hover {
+     background-color: #ffffff;
+     /* Light beige */
+ }
+
+ .btn-primary {
+     background-color: #2a4d69;
+     /* Dark blue */
+     border-color: #2a4d69;
+     /* Dark blue */
+ }
+
+ .btn-primary:hover {
+     background-color: #f4a261;
+     /* Beige-orange */
+     border-color: #f4a261;
+     /* Beige-orange */
+ }
+
+ #expensePieChart {
+     background-color: #ffffff;
+     /* White */
+     border: 2px solid #2a4d69;
+     /* Dark blue */
+     max-width: 400px;
+     /* Smaller size */
+     max-height: 400px;
+     /* Smaller size */
+ }
+
+ .table-striped tbody tr:nth-of-type(odd) {
+     background-color: #ffffff;
+     /* Light beige */
+ }
+
+ .table-striped tbody tr:nth-of-type(even) {
+     background-color: #ffffff;
+     /* White */
+ }
