@@ -1,6 +1,6 @@
-"# ProjectUFFT_Module_5" 
-This command will install all the required packages and their dependencies.
-pip install Flask Flask-SQLAlchemy pandas reportlab
+"# ProjectUFFT_Module_5" \n 
+This command will install all the required packages and their dependencies. \n
+`pip install Flask Flask-SQLAlchemy pandas reportlab`
 
 
 1) Flask: The core web framework for building web applications.
