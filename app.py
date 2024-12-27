@@ -6,6 +6,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -22,10 +23,13 @@ def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
 # Route to fetch user-specific data
+from datetime import datetime, timedelta
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     selected_user_id = None
     search_query = None
+    time_range = None
     expense_data = []
     category_totals = {}
     user_ids = []
@@ -39,6 +43,7 @@ def index():
     if request.method == 'POST':
         selected_user_id = request.form.get('user_id')
         search_query = request.form.get('search_query', '').strip()
+        time_range = request.form.get('time_range', '')
 
         try:
             selected_user_id = int(selected_user_id)
@@ -54,12 +59,30 @@ def index():
                         JOIN categories c ON e.category_id = c.category_id
                         WHERE e.user_id = %s
                     """
+                    params = [selected_user_id]
+
+                    # Filter by time range
+                    if time_range == "week":
+                        start_date = datetime.now() - timedelta(days=7)
+                    elif time_range == "month":
+                        start_date = datetime.now() - timedelta(days=30)
+                    elif time_range == "year":
+                        start_date = datetime.now() - timedelta(days=365)
+                    else:
+                        start_date = None
+
+                    if start_date:
+                        sql += " AND e.date >= %s"
+                        params.append(start_date)
+                        
+                    sql += " ORDER BY e.date"
+
+                    # Filter by search query if provided
                     if search_query:
                         sql += " AND e.description LIKE %s"
-                        cursor.execute(sql, (selected_user_id, f"%{search_query}%"))
-                    else:
-                        cursor.execute(sql, (selected_user_id,))
-                    
+                        params.append(f"%{search_query}%")
+
+                    cursor.execute(sql, tuple(params))
                     expenses = cursor.fetchall()
 
                     expense_data = [
@@ -81,6 +104,7 @@ def index():
         user_ids=user_ids,
         selected_user_id=selected_user_id,
         search_query=search_query,
+        time_range=time_range,
         expenses=expense_data,
         category_totals=category_totals
     )
@@ -178,6 +202,19 @@ def download_pdf():
     pdf_output.seek(0)
 
     return send_file(pdf_output, as_attachment=True, download_name="expenses.pdf", mimetype="application/pdf")
+# Handle Invalid URL
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template(
+        'index.html',
+        error_message="Invalid action! The page you are trying to access does not exist.",
+        user_ids=[],
+        selected_user_id=None,
+        search_query=None,
+        expenses=[],
+        category_totals={}
+    ), 404
+
 
 if __name__ == '__main__':
     app.run(debug=True)

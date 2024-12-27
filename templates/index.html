@@ -48,6 +48,17 @@
                     </select>
                 </div>
                 <div class="col-auto">
+                    <label for="time_range" class="form-label">Select Time Range:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select name="time_range" id="time_range" class="form-select">
+                            <option value="">All Time</option>
+                            <option value="week" {% if time_range=="week" %}selected{% endif %}>Week</option>
+                            <option value="month" {% if time_range=="month" %}selected{% endif %}>Month</option>
+                            <option value="year" {% if time_range=="year" %}selected{% endif %}>Year</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
                     <button type="submit" class="btn btn-primary">Fetch Records</button>
                 </div>
             </form>
@@ -59,12 +70,18 @@
             </div>
         </div>
 
+        {% if error_message %}
+        <div style="color: red; font-weight: bold; margin-top: 10px;">
+            {{ error_message }}
+        </div>
+        {% endif %}
+
         {% if expenses %}
         <div>
             <h2 class="text-center">Expense Report for User {{ selected_user_id }}</h2>
 
             <!-- Search Field -->
-            <div class="d-flex justify-content-end my-3">
+            <div class="d-flex justify-content-center my-3">
                 <input type="text" id="searchInput" class="form-control w-25" placeholder="Search expenses..."
                     oninput="filterExpenses()">
             </div>
