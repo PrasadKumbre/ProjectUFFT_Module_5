@@ -66,3 +66,34 @@
      background-color: #ffffff;
      /* White */
  }
+
+ #searchInput {
+     border: 1px solid black;
+ }
+
+ #noRecordsFound {
+     display: none;
+     text-align: center;
+     margin-top: 20px;
+     color: red;
+ }
+
+ #loadingAnimation {
+     display: none;
+     text-align: center;
+     margin-top: 20px;
+ }
+
+ canvas {
+     max-width: 400px;
+     max-height: 400px;
+     margin: 0 auto;
+     background-color: white;
+     border-radius: 10px;
+     /* Add border-radius for rounded corners */
+ }
+
+ h5 {
+     margin-top: 20px;
+     font-weight: bold;
+ }

@@ -1,38 +1,40 @@
-        // Get category totals from the backend
-        const categoryTotals = {{ category_totals | tojson }};
-
-        // Prepare data for Chart.js
-        const labels = Object.keys(categoryTotals);
-        const data = Object.values(categoryTotals);
-
-        // Generate the pie chart
-        const ctx = document.getElementById('expensePieChart').getContext('2d');
+document.addEventListener("DOMContentLoaded", function () {
+  if (typeof groupedExpenses !== "undefined") {
+    Object.entries(groupedExpenses).forEach(([user_id, user_data]) => {
+      const ctx = document.getElementById(`chart-${user_id}`);
+      if (ctx) {
         new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Expense Distribution',
-                    data: data,
-                    backgroundColor: [
-                        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'
-                    ],
-                    borderColor: '#ffffff',
-                    borderWidth: 1
-                }]
+          type: "pie",
+          data: {
+            labels: Object.keys(user_data.categories),
+            datasets: [
+              {
+                data: Object.values(user_data.categories),
+                backgroundColor: [
+                  "#FF6384",
+                  "#36A2EB",
+                  "#FFCE56",
+                  "#4BC0C0",
+                  "#9966FF",
+                  "#FF9F40",
+                ],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: "top",
+              },
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: function (tooltipItem) {
-                                const category = labels[tooltipItem.dataIndex];
-                                const amount = data[tooltipItem.dataIndex];
-                                return `${category}: ₹${amount.toFixed(2)}`;
-                            }
-                        }
-                    }
-                }
-            }
+          },
         });
+      } else {
+        console.error(`Canvas element not found for chart-${user_id}`);
+      }
+    });
+  } else {
+    console.error("No expense data available for charts.");
+  }
+});
