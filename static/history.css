@@ -1,0 +1,47 @@
+    body {
+        background-color: #f9f9f5;
+    }
+
+    h1 {
+        color: #2a4d69;
+        font-weight: bold;
+    }
+
+    .btn-info {
+        background-color: #1a8b6f;
+        border-color: #1a8b6f;
+    }
+
+    .btn-info:hover {
+        background-color: #146b53;
+        border-color: #146b53;
+    }
+
+    .btn-danger {
+        background-color: #d9534f;
+        border-color: #d9534f;
+    }
+
+    .btn-danger:hover {
+        background-color: #c9302c;
+        border-color: #c9302c;
+    }
+
+    /* .table {
+        background-color: white;
+        border: 1px solid black;
+    } */
+
+    .table th {
+        background-color: #2a4d69;
+        color: white;
+    }
+
+    .btn-primary {
+        background-color: #1a8b6f;
+        border-color: #1a8b6f;
+    }
+
+    .btn-primary:hover {
+        background-color: #146b53;
+    }

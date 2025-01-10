@@ -12,10 +12,9 @@
  }
 
  table {
-     background-color: #ffffff;
      border-radius: 10px;
      /* Rounded corners */
-     border: 2px solid black;
+     border: 2px solid rgba(0, 0, 0, 0.1);
      /* Black border */
      overflow: hidden;
  }
@@ -96,4 +95,18 @@
  h5 {
      margin-top: 20px;
      font-weight: bold;
+ }
+
+ /* Style for the success message */
+ .success-message {
+     display: none;
+     background-color: #28a745;
+     color: white;
+     padding: 10px;
+     border-radius: 5px;
+     margin-top: 20px;
+ }
+
+ .success-message.show {
+     display: block;
  }
