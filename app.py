@@ -8,8 +8,6 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-
-
 app = Flask(__name__)
 
 # MySQL Database Configuration
@@ -42,7 +40,7 @@ def fetch_families():
     families = []
     with get_db_connection() as connection:
         with connection.cursor(dictionary=True) as cursor:
-            cursor.execute("SELECT family_id, family_name FROM families")
+            cursor.execute("SELECT family_id, family_name FROM family")
             families = cursor.fetchall()
     return families
 
@@ -319,9 +317,6 @@ def show_report(report_id):
     else:
         return "<h1>Report not found</h1>", 404
 
-
-
-
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template(
@@ -333,60 +328,122 @@ def page_not_found(e):
         category_totals={}
     ), 404
 
+##### Summary ###### 
+from collections import defaultdict
+from transformers import pipeline
 
 from collections import defaultdict
 # Function to generate summary
+summarizer = pipeline("summarization", model="t5-small")
 def generate_summary(expense_data):
+    # Calculate the total expense
     total_expense = sum(exp['amount'] for exp in expense_data)
-    
-    summary = f"<br>Total expense: ₹{total_expense}<br>"
-    
+
+    # Prepare the raw summary content
+    summary_content = f"Total Expense: ₹{total_expense}\n"
     users = {}
 
-    # Grouping expenses by users
+    # Group expenses by user
     for exp in expense_data:
         user_name = exp['user_name']
         if user_name not in users:
             users[user_name] = []
         users[user_name].append(exp)
 
-    # Looping through users and calculating their expenses
     for user_name, expenses in users.items():
-        summary += f"{user_name} :-     "
+        # Calculate total expense for the user
         user_total_expense = sum(exp['amount'] for exp in expenses)
-        summary += f"Total Expense: ₹{user_total_expense}<br>"
-        
-        # Group expenses by category
-        categories = {}
-        for exp in expenses:
-            category = exp['category_name']
-            if category not in categories:
-                categories[category] = []
-            categories[category].append(exp)
-         
-        # Finding highest and lowest expenses
+
+        # Find the unique categories
+        unique_categories = set(exp['category_name'] for exp in expenses)
+
+        # Find highest and lowest expenses
         highest_expense = max(expenses, key=lambda x: x['amount'])
         lowest_expense = min(expenses, key=lambda x: x['amount'])
-        
-        summary += f"  Highest Expense: {highest_expense['category_name']} - ₹{highest_expense['amount']} on {highest_expense['date']}<br>"
-        summary += f"  Lowest Expense: {lowest_expense['category_name']} - ₹{lowest_expense['amount']} on {lowest_expense['date']}<br>"
-    
-    return summary
+
+        # Format the output for the user
+        summary_content += (
+    f"{user_name} spent ₹{user_total_expense:.2f} across {len(unique_categories)} categories "
+    f"on {highest_expense['date'].strftime('%Y-%m-%d')}. \n"
+    f"The highest expense was ₹{highest_expense['amount']:.2f} on {highest_expense['category_name']}.\n"
+    f"The lowest was ₹{lowest_expense['amount']:.2f} on {lowest_expense['category_name']}.\n"
+)
+    return summary_content
 
 # Flask route to generate summary
+
 @app.route('/generate_summary', methods=['POST'])
 def generate_summary_endpoint():
-    # Get the JSON data from the request
+    if not Expense_data or not Expense_data[0]:
+        return jsonify({"error": "No expense data available."}), 400
+
     expense_data = Expense_data[0]
-
-    if not expense_data:
-        return jsonify({"error": "No expense data provided."}), 400
-
-    # Generate the summary for the expense data
-    summary = generate_summary(expense_data)
+    try:
+        summary = generate_summary(expense_data)
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate summary: {e}"}), 500
 
     return jsonify({"summary": summary})
 
+    # Function
+
+# Flask route to generate brief summary
+from datetime import datetime
+
+# Helper function to get the start of the week (Monday)
+def get_week_start(date):
+    if isinstance(date, str):
+        date = datetime.strptime(date, '%d/%m/%Y')
+    start_of_week = date - timedelta(days=date.weekday())  # Monday as the start of the week
+    return start_of_week.strftime('%d/%m/%Y')
+
+# Updated function to generate a weekly brief summary and highlight the week with the highest expense
+def generate_brief_summary(expense_data):
+    # Group expenses by user and week
+    user_expenses = defaultdict(lambda: defaultdict(list))
+    weekly_totals = defaultdict(lambda: defaultdict(float))  # To store total expenses per week per user
+
+    for exp in expense_data:
+        user_name = exp['user_name']
+        week_start = get_week_start(exp['date']) if isinstance(exp['date'], datetime) else get_week_start(exp['date'])
+        user_expenses[user_name][week_start].append(exp)
+        weekly_totals[user_name][week_start] += exp['amount']
+
+    # Prepare the brief summary content
+    brief_summary_content = ""
+    for user_name, weeks in user_expenses.items():
+        brief_summary_content += f"{user_name}:\n"
+        max_week = max(weekly_totals[user_name], key=weekly_totals[user_name].get)  # Week with the highest expense
+        max_amount = weekly_totals[user_name][max_week]
+
+        for week_start, expenses in weeks.items():
+            total = weekly_totals[user_name][week_start]
+            brief_summary_content += f"Week starting {week_start} (Total: ₹{total:.2f}):\n"
+            for exp in expenses:
+                date = exp['date'].strftime('%d/%m/%Y') if isinstance(exp['date'], datetime) else exp['date']
+                brief_summary_content += (
+                    f"- Spent ₹{exp['amount']:.2f} on {exp['category_name']} on {date}.\n"
+                )
+        
+        # Highlight the week with the highest expense
+        brief_summary_content += f"\nHighest expense week: Week starting {max_week} (₹{max_amount:.2f})<br>"
+        brief_summary_content += "<br>"
+
+    return brief_summary_content.strip()
+
+# Flask route to generate a weekly brief summary
+@app.route('/generate_brief_summary', methods=['POST'])
+def generate_brief_summary_endpoint():
+    if not Expense_data or not Expense_data[0]:
+        return jsonify({"error": "No expense data available."}), 400
+
+    expense_data = Expense_data[0]
+    try:
+        brief_summary = generate_brief_summary(expense_data)
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate brief summary: {e}"}), 500
+
+    return jsonify({"brief_summary": brief_summary})
 
 if __name__ == '__main__':
     app.run(debug=True)

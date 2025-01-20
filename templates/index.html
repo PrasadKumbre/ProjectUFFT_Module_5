@@ -1,236 +1,244 @@
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Expense Tracker</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-        <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-        <script src="static/js/Expanse.js"></script>
-    </head>
-    <body>
-        <div class="container py-4">
-            
-            <h1 class="text-center">Expense Data</h1>
-            <!-- Top Navigation -->
-            <div class="d-flex justify-content-end align-items-end mb-4">
-                <a href="{{ url_for('show_history') }}" class="btn btn-success">Show History</a>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="static/js/Expanse.js"></script>
+</head>
+
+<body>
+    <div class="container py-4">
+
+        <h1 class="text-center">Expense Data</h1>
+        <!-- Top Navigation -->
+        <div class="d-flex justify-content-end align-items-end mb-4">
+            <a href="{{ url_for('show_history') }}" class="btn btn-success">Show History</a>
+        </div>
+
+        <!-- Family Dropdown and Fetch Button -->
+        <div class="row justify-content-center my-3">
+            <div class="col-md-4">
+                <label for="family_id" class="form-label">Select Family:</label>
+                <select name="family_id" id="family_id" class="form-select">
+                    <option value="">-- Select Family --</option>
+                    {% for family in families %}
+                    <option value="{{ family.family_id }}" {% if family.family_id|string==family_id|string %}selected{%
+                        endif %}>
+                        {{ family.family_name }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
-
-            <!-- Family Dropdown and Fetch Button -->
-            <div class="row justify-content-center my-3">
-                <div class="col-md-4">
-                    <label for="family_id" class="form-label">Select Family:</label>
-                    <select name="family_id" id="family_id" class="form-select">
-                        <option value="">-- Select Family --</option>
-                        {% for family in families %}
-                        <option value="{{ family.family_id }}" {% if family.family_id|string==family_id|string %}selected{%
-                            endif %}>
-                            {{ family.family_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-primary mt-4" id="fetchFamilyMembersBtn">Fetch Members</button>
-                </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-primary mt-4" id="fetchFamilyMembersBtn">Fetch Members</button>
             </div>
+        </div>
 
-            <!-- Hidden Family ID -->
-            <form method="POST" action="/" class="row g-3 align-items-center justify-content-center">
-                <input type="hidden" name="family_id" id="hidden_family_id" value="{{ family_id }}">
+        <!-- Hidden Family ID -->
+        <form method="POST" action="/" class="row g-3 align-items-center justify-content-center">
+            <input type="hidden" name="family_id" id="hidden_family_id" value="{{ family_id }}">
 
-                <!-- User Dropdown, Search, and Time Range -->
-                <div class="col-md-3">
-                    <label for="user_id" class="form-label">Select User:</label>
-                    <select name="user_id" id="user_id" class="form-select">
-                        <option value="">-- Select User --</option>
-                        {% if family_members %}
-                        {% for member in family_members %}
-                        <option value="{{ member.user_id }}" {% if member.user_id|string==selected_user_id|string
-                            %}selected{% endif %}>
-                            {{ member.name }}
-                        </option>
-                        {% endfor %}
-                        <option value="all" {% if selected_user_id=='all' %}selected{% endif %}>All Family Members</option>
-                        {% endif %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="search_query" class="form-label">Search Description:</label>
-                    <input type="text" name="search_query" id="search_query" class="form-control"
-                        value="{{ search_query or '' }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="time_range" class="form-label">Select Time Range:</label>
-                    <select name="time_range" id="time_range" class="form-select" onchange="toggleDateInputs()">
-                        <option value="">All Time</option>
-                        <option value="week" {% if time_range=='week' %}selected{% endif %}>Last Week</option>
-                        <option value="month" {% if time_range=='month' %}selected{% endif %}>Last Month</option>
-                        <option value="year" {% if time_range=='year' %}selected{% endif %}>Last Year</option>
-                        <option value="custom" {% if time_range=='custom' %}selected{% endif %}>Custom Range</option>
-                    </select>
-                </div>
-                <div id="custom_date_inputs"
-                    style="display: {% if time_range == 'custom' %}block{% else %}none{% endif %};">
-                    <div class="row justify-content-center g-2">
-                        <div class="col-md-4">
-                            <label for="start_date" class="form-label">Start Date:</label>
-                            <input type="date" name="start_date" id="start_date" class="form-control"
-                                value="{{ start_date }}" max="{{ current_date }}">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="end_date" class="form-label">End Date:</label>
-                            <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}"
-                                max="{{ current_date }}">
-                        </div>
+            <!-- User Dropdown, Search, and Time Range -->
+            <div class="col-md-3">
+                <label for="user_id" class="form-label">Select User:</label>
+                <select name="user_id" id="user_id" class="form-select">
+                    <option value="">-- Select User --</option>
+                    {% if family_members %}
+                    {% for member in family_members %}
+                    <option value="{{ member.user_id }}" {% if member.user_id|string==selected_user_id|string
+                        %}selected{% endif %}>
+                        {{ member.name }}
+                    </option>
+                    {% endfor %}
+                    <option value="all" {% if selected_user_id=='all' %}selected{% endif %}>All Family Members</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="search_query" class="form-label">Search Description:</label>
+                <input type="text" name="search_query" id="search_query" class="form-control"
+                    value="{{ search_query or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label for="time_range" class="form-label">Select Time Range:</label>
+                <select name="time_range" id="time_range" class="form-select" onchange="toggleDateInputs()">
+                    <option value="">All Time</option>
+                    <option value="week" {% if time_range=='week' %}selected{% endif %}>Last Week</option>
+                    <option value="month" {% if time_range=='month' %}selected{% endif %}>Last Month</option>
+                    <option value="year" {% if time_range=='year' %}selected{% endif %}>Last Year</option>
+                    <option value="custom" {% if time_range=='custom' %}selected{% endif %}>Custom Range</option>
+                </select>
+            </div>
+            <div id="custom_date_inputs"
+                style="display: {% if time_range == 'custom' %}block{% else %}none{% endif %};">
+                <div class="row justify-content-center g-2">
+                    <div class="col-md-4">
+                        <label for="start_date" class="form-label">Start Date:</label>
+                        <input type="date" name="start_date" id="start_date" class="form-control"
+                            value="{{ start_date }}" max="{{ current_date }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="end_date" class="form-label">End Date:</label>
+                        <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}"
+                            max="{{ current_date }}">
                     </div>
                 </div>
-                <div class="col-md-12 text-center mt-3">
-                    <button type="submit" class="btn btn-primary" onclick="fetchrecords()">Filter Records</button>
-                </div>
-            </form>
-            {% if no_records %}
-            <h1 class="row justify-content-center" style="color: red; margin-top:20px; font-size:20px;">No records found for
-                the selected filter.</h1>
-            {% endif %}
-            <!-- Expense Table -->
-            {% if expenses %}
-            <h2 class="text-center mt-5">Expense Report</h2>
-            <div class="d-flex justify-content-center my-3">
-                <input type="text" id="searchInput" class="form-control w-25" placeholder="Search expenses..."
-                    oninput="filterExpenses()">
             </div>
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="expenseTable" style="border: 1px solid black; background-color:black">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Category</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                            <th>Description</th>
-                            <th>User Name</th>
-                        </tr>
-                    </thead>
-                    <tbody style="background-color: white;">
-                        {% for exp in expenses %}
-                        <tr>
-                            <td>{{ exp.expense_id }}</td>
-                            <td>{{ exp.category_name }}</td>
-                            <td>₹{{ exp.amount }}</td>
-                            <td>{{ exp.date }}</td>
-                            <td>{{ exp.description }}</td>
-                            <td>{{ exp.user_name }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="col-md-12 text-center mt-3">
+                <button type="submit" class="btn btn-primary" onclick="fetchrecords()">Filter Records</button>
             </div>
-            <p id="noRecordsFound">No records found</p>
-            <!-- Pagination Controls -->
-            <div class="d-flex justify-content-end my-3">
-                <button id="prevPage" class="btn" style="background-color: #2a4d69; color: white;">Back</button>
-                <span id="pageNumber" style="font-size: 16px; color: #2a4d69; margin:10px">Page 1</span>
-                <button id="nextPage" class="btn" style="background-color: #2a4d69; color: white;">Next</button>
-            </div>
-            {% endif %}
-            <!-- Pie Chart and Bar Chart Side by Side -->
-            <!-- Pie Chart and Bar Chart -->
-            {% if grouped_expenses %}
-            <h2 class="d-flex justify-content-center my-3 mx-5">Expense Visualization</h2>
+        </form>
+        {% if no_records %}
+        <h1 class="row justify-content-center" style="color: red; margin-top:20px; font-size:20px;">No records found for
+            the selected filter.</h1>
+        {% endif %}
+        <!-- Expense Table -->
+        {% if expenses %}
+        <h2 class="text-center mt-5">Expense Report</h2>
+        <div class="d-flex justify-content-center my-3">
+            <input type="text" id="searchInput" class="form-control w-25" placeholder="Search expenses..."
+                oninput="filterExpenses()">
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="expenseTable"
+                style="border: 1px solid black; background-color:black">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Category</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>User Name</th>
+                    </tr>
+                </thead>
+                <tbody style="background-color: white;">
+                    {% for exp in expenses %}
+                    <tr>
+                        <td>{{ exp.expense_id }}</td>
+                        <td>{{ exp.category_name }}</td>
+                        <td>₹{{ exp.amount }}</td>
+                        <td>{{ exp.date }}</td>
+                        <td>{{ exp.description }}</td>
+                        <td>{{ exp.user_name }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p id="noRecordsFound">No records found</p>
+        <!-- Pagination Controls -->
+        <div class="d-flex justify-content-end my-3">
+            <button id="prevPage" class="btn" style="background-color: #2a4d69; color: white;">Back</button>
+            <span id="pageNumber" style="font-size: 16px; color: #2a4d69; margin:10px">Page 1</span>
+            <button id="nextPage" class="btn" style="background-color: #2a4d69; color: white;">Next</button>
+        </div>
+        {% endif %}
+        <!-- Pie Chart and Bar Chart Side by Side -->
+        <!-- Pie Chart and Bar Chart -->
+        {% if grouped_expenses %}
+        <h2 class="d-flex justify-content-center my-3 mx-5">Expense Visualization</h2>
 
-            <!-- Pie Chart Section -->
-            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
-                {% for user_id, user_data in grouped_expenses.items() %}
-                <div
-                    style="width: 300px; text-align: center; border: 2px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 10px; background-color:white;">
-                    <h5>{{ user_data.user_name }}</h5>
-                    <canvas id="chart-{{ user_id }}" style="width: 280px; height: 250px;"></canvas>
-                </div>
-                {% endfor %}
+        <!-- Pie Chart Section -->
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px;">
+            {% for user_id, user_data in grouped_expenses.items() %}
+            <div
+                style="width: 300px; text-align: center; border: 2px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 10px; background-color:white;">
+                <h5>{{ user_data.user_name }}</h5>
+                <canvas id="chart-{{ user_id }}" style="width: 280px; height: 250px;"></canvas>
             </div>
+            {% endfor %}
+        </div>
 
-            <!-- Bar Chart Section -->
-            <div style="display: flex; justify-content: center; margin-top: 20px;">
-                <div
-                    style="width: 600px; border: 2px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 10px; background-color:white;">
-                    <h5 class="text-center">Bar Chart</h5>
-                    <canvas id="barChart" style="width: 600px; height: 400px;"></canvas>
-                </div>
+        <!-- Bar Chart Section -->
+        <div style="display: flex; justify-content: center; margin-top: 20px;">
+            <div
+                style="width: 600px; border: 2px solid rgba(0, 0, 0, 0.1); border-radius: 15px; padding: 10px; background-color:white;">
+                <h5 class="text-center">Bar Chart</h5>
+                <canvas id="barChart" style="width: 600px; height: 400px;"></canvas>
             </div>
-            <script>
-                const groupedExpenses = {{ grouped_expenses | tojson }};
-            </script>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-            <script src="static/js/pie_chart_script.js"></script>
-            <script>
-                // Process Data for Bar Chart
-                const labels = [];
-                const data = [];
-                for (const userId in groupedExpenses) {
-                    const user = groupedExpenses[userId];
-                    for (const category in user.categories) {
-                        const label = `${user.user_name} - ${category}`;
-                        labels.push(label);
-                        data.push(user.categories[category]);
+        </div>
+        <script>
+            const groupedExpenses = {{ grouped_expenses | tojson }};
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="static/js/pie_chart_script.js"></script>
+        <script>
+            // Process Data for Bar Chart
+            const labels = [];
+            const data = [];
+            for (const userId in groupedExpenses) {
+                const user = groupedExpenses[userId];
+                for (const category in user.categories) {
+                    const label = `${user.user_name} - ${category}`;
+                    labels.push(label);
+                    data.push(user.categories[category]);
+                }
+            }
+            // Render Bar Chart
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Expense Amount',
+                        data: data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // Allow resizing
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: { enabled: true }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
                     }
                 }
-                // Render Bar Chart
-                const barCtx = document.getElementById('barChart').getContext('2d');
-                new Chart(barCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Expense Amount',
-                            data: data,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false, // Allow resizing
-                        plugins: {
-                            legend: { display: true },
-                            tooltip: { enabled: true }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            </script>
-            {% endif %}
-            <!-- Export Buttons -->
-            {% if expenses %}
-            <div class="text-center mt-4">
-                <a href="/download/csv" class="btn btn-primary mx-2">Download CSV</a>
-                <a href="/download/excel" class="btn btn-primary mx-2">Download Excel</a>
-                <a href="/download/pdf" class="btn btn-primary mx-2">Download PDF</a>
-                <a href="/save_report" class="btn btn-success mx-2">Save the Report</a>
-            </div>
-            <div>
-                <button id="generate-summary-btn" class="btn btn-primary">Generate Summary</button>
-                <div id="summary-result" style="margin-top: 15px;"></div>
-            </div>
-            {% endif %}
+            });
+        </script>
+        {% endif %}
+        <!-- Export Buttons -->
+        {% if expenses %}
+        <div class="text-center mt-4">
+            <a href="/download/csv" class="btn btn-primary mx-2">Download CSV</a>
+            <a href="/download/excel" class="btn btn-primary mx-2">Download Excel</a>
+            <a href="/download/pdf" class="btn btn-primary mx-2">Download PDF</a>
+            <a href="/save_report" class="btn btn-success mx-2">Save the Report</a>
+        </div>
+        {% endif %}
         <!-- Success Message using Bootstrap Alert -->
         {% if success_message %}
         <div class="alert alert-success alert-dismissible fade show mx-3 m-5" role="alert">
             <!-- Success Symbol -->
-            <strong><span class="bi bi-check-circle-fill"></span> Success!</strong> Your Report has been successfully saved.
+            <strong><span class="bi bi-check-circle-fill"></span> Success!</strong> Your Report has been successfully
+            saved.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endif %}
+
+        <div>
+            <button id="generate-summary-btn" class="btn btn-primary">Generate Summary</button>
+            <div id="summary-result" style="margin-top: 15px;"></div>
+            <div id="brief-summary-section" style="margin-top: 15px; display: none;">
+                <button id="generate-brief-summary-btn" class="btn btn-secondary">Generate Brief Summary</button>
+                <div id="brief-summary-result" style="margin-top: 15px;"></div>
+            </div>
         </div>
-        
-        
+
         <script>
+            // Generate Summary button logic
             document.getElementById("generate-summary-btn").addEventListener("click", function () {
                 fetch("/generate_summary", {
                     method: "POST",
@@ -241,7 +249,11 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.summary) {
-                            document.getElementById("summary-result").innerHTML = `<strong>Summary:</strong> ${data.summary}`;
+                            // Display the summary
+                            document.getElementById("summary-result").innerHTML = `<strong>Summary:</strong><br>${data.summary.replace(/\n/g, "<br>")}`;
+
+                            // Show the Brief Summary button
+                            document.getElementById("brief-summary-section").style.display = "block";
                         } else {
                             document.getElementById("summary-result").innerHTML = `<strong>Error:</strong> ${data.error}`;
                         }
@@ -251,12 +263,38 @@
                         document.getElementById("summary-result").innerHTML = `<strong>Error generating summary.</strong>`;
                     });
             });
+
+            // Generate Brief Summary button logic
+            document.getElementById("generate-brief-summary-btn").addEventListener("click", function () {
+                fetch("/generate_brief_summary", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.brief_summary) {
+                            // Display the brief summary
+                            document.getElementById("brief-summary-result").innerHTML = `<strong>Brief Summary:</strong><br>${data.brief_summary.replace(/\n/g, "<br>")}`;
+                        } else {
+                            document.getElementById("brief-summary-result").innerHTML = `<strong>Error:</strong> ${data.error}`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error:", error);
+                        document.getElementById("brief-summary-result").innerHTML = `<strong>Error generating brief summary.</strong>`;
+                    });
+            });
         </script>
+
+
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
         <!-- Bootstrap Icons for success icon -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
         <!-- Pagination Script -->
         <script src="static/js/Pagination.js"></script>
-    </body>
-    </html> 
+</body>
+
+</html>
