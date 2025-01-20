@@ -331,8 +331,6 @@ def page_not_found(e):
 ##### Summary ###### 
 from collections import defaultdict
 from transformers import pipeline
-
-from collections import defaultdict
 # Function to generate summary
 summarizer = pipeline("summarization", model="t5-small")
 def generate_summary(expense_data):
